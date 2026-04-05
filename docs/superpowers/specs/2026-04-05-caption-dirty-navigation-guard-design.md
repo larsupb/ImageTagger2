@@ -14,6 +14,7 @@ Dirty state = `textarea text !== saved caption (currentItem.caption)`. This mean
 
 - Add `savedCaption: string` prop — the caption as last saved (from `currentItem.caption`)
 - Add `onDirtyChange?: (dirty: boolean) =>` callback
+- Add `getUnsavedText?: () => string` callback — returns current textarea text (so EditPage can save it without lifting state)
 - Compute dirty via `useEffect` on `[text, savedCaption]`, calls callback when dirty state changes
 - When dirty: "Save Caption" button switches to `variant="default"` with blue accent (primary action style)
 - When clean: "Save Caption" button stays `variant="secondary"`
@@ -32,7 +33,8 @@ Dirty state = `textarea text !== saved caption (currentItem.caption)`. This mean
   - On Discard: call `loadItem(index)`, then close dialog
   - On Cancel: close dialog, stay on current image
 - Add `beforeunload` listener for browser/tab close — sets `e.returnValue` when dirty
-- Pass `savedCaption={currentItem.caption}` and `onDirtyChange` to CaptionEditor
+- Store a ref to `getUnsavedText` from CaptionEditor to retrieve current text for saving
+- Pass `savedCaption={currentItem.caption}`, `onDirtyChange`, and `getUnsavedText` to CaptionEditor
 
 ### ConfirmDialog
 
