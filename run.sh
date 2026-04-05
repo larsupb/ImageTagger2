@@ -5,7 +5,8 @@ echo "Starting ImageTagger..."
 
 # Backend
 cd backend
-uvicorn app.main:app --reload --port 8000 &
+source .venv/bin/activate
+PYTHONUNBUFFERED=1 uvicorn app.main:app --reload --port 8000 2>&1 | cat &
 BACKEND_PID=$!
 
 # Frontend
