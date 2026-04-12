@@ -2,11 +2,18 @@
 
 AI-powered image tagging and dataset management tool. FastAPI backend + Next.js 15 frontend.
 
+## Quick Start
+
+```bash
+./run.sh        # starts backend :8000 + frontend :3000
+./shutdown.sh   # stops both
+```
+
 ## Project Structure
 
 ```
 ImageTagger2/
-├── backend/              # Python 3.11+ / FastAPI
+├── backend/              # Python 3.12+ / FastAPI
 │   ├── app/
 │   │   ├── routers/      # API endpoints (dataset, media, captions, processing, tagging, batch, settings)
 │   │   ├── services/     # Business logic (caption, dataset, processing, tagger)
@@ -87,8 +94,7 @@ No test framework is currently configured. When adding tests:
 - **Naming**: `snake_case` for functions/variables, `PascalCase` for classes
 - **Error handling**: Raise `HTTPException(status_code, detail)` for API errors. Use `try/except` with specific exception types
 - **Routers**: Define in `app/routers/`. Use `APIRouter` with prefix (e.g., `prefix="/api/dataset"`)
-- **Services**: Business logic goes in `app/services/`. Routers should be thin, delegating to services
-- **Sessions**: All endpoints (except `/health`) require `X-Session-ID` header. Use `get_session()` or `get_session_flexible()` dependency
+- **Services**: Business logic in `app/services/`. Routers thin, delegating to services
 - **Settings**: Stored in `backend/settings.json`. Use `app.config` functions (`read_settings`, `save_settings`, `update_setting`, `get_setting`)
 
 ### TypeScript (Frontend)
@@ -108,4 +114,7 @@ No test framework is currently configured. When adding tests:
 - **No emojis** in code or UI
 - **No comments** unless explaining non-obvious behavior
 - **Commit messages**: Present tense, imperative mood (e.g., "Add batch export feature")
-- **API contracts**: Frontend and backend share the `/api/:path*` proxy via Next.js rewrites
+- **Architecture**: Frontend proxies `/api/:path*` to FastAPI via Next.js rewrites (no CORS in dev)
+- **Sessions**: In-memory. Each session holds an `ImageDataSet`. All endpoints (except `/health`) require `X-Session-ID` header
+- **Batch progress**: SSE streaming on `/api/batch/process` — use `EventSource` client-side
+- **Git**: Repo with submodules (`backend/` and `frontend/`). Use `git clone --recursive` or `git submodule update --init` after clone
