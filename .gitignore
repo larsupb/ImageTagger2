@@ -1,2 +1,3 @@
 .worktree
 .worktree/
+backend/tests/.env
