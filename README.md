@@ -32,7 +32,7 @@ ImageTagger2/
 - **Batch** — Process entire datasets with rename, upscale, bucket resize, mask generation, and captioning. SSE-based progress streaming
 - **Tools** — Copy images (all or bookmarked) to target directory
 - **Validation** — Dataset validation with bucket distribution analysis
-- **Settings** — Configure upscaler, taggers, Florence prompt, rembg model, OpenAI-compatible API (Ollama, etc.), models directory
+- **Settings** — Configure upscaler, taggers, Florence prompt, rembg model, VLM Tagger API (Ollama, etc.), models directory
 
 ## Supported Taggers
 
@@ -42,7 +42,7 @@ ImageTagger2/
 | WD14 | Waifu Diffusion 14 ONNX tagger |
 | Florence-2 | Detailed caption generation with configurable prompts |
 | Qwen2-VL | Alibaba's vision-language model |
-| OpenAI-compatible | API-based (Ollama, LM Studio, etc.) |
+| VLM Tagger | API-based (Ollama, LM Studio, etc.) |
 | Combo | Combination of selected taggers |
 
 ## Quick Start

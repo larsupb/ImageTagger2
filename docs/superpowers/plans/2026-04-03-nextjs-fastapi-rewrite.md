@@ -295,7 +295,7 @@ class CaptionSaveRequest(BaseModel):
 
 class CaptionGenerateRequest(BaseModel):
     index: int
-    tagger: str  # 'joytag' | 'wd14' | 'florence' | 'qwen2-vl' | 'openai' | 'combo'
+    tagger: str  # 'joytag' | 'wd14' | 'florence' | 'qwen2-vl' | 'vlm-tagger' | 'combo'
 
 
 class CaptionGenerateResponse(BaseModel):
@@ -1672,7 +1672,7 @@ def list_taggers():
         {"id": "wd14", "name": "WD14", "description": "Waifu Diffusion tags"},
         {"id": "florence", "name": "Florence-2", "description": "Detailed descriptions"},
         {"id": "qwen2-vl", "name": "Qwen2-VL", "description": "Alibaba VL model captions"},
-        {"id": "openai", "name": "OpenAI-compatible", "description": "API-based (Ollama, etc.)"},
+        {"id": "vlm-tagger", "name": "VLM Tagger", "description": "API-based (Ollama, etc.)"},
         {"id": "combo", "name": "Combo", "description": "Combination of selected taggers"},
     ]
 
