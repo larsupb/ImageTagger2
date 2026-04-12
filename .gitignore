@@ -3,3 +3,13 @@
 backend/tests/.env
 __pycache__/
 .DS_Store
+.venv
+
+# IDE
+.idea/
+
+# Superpowers
+.superpowers/
+
+# User-specific
+CLAUDE.md
