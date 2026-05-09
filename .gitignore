@@ -1,5 +1,7 @@
 .worktree
 .worktree/
+.worktrees/
+.worktrees/*
 backend/tests/.env
 __pycache__/
 .DS_Store
