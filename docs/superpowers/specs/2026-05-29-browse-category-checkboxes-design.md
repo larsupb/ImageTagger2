@@ -70,6 +70,25 @@ The handler is memoized with `useCallback` and depends on `setSelectedIndices`.
 | Indeterminate | Click | All items in category added to selection |
 | Checked | Click | All items in category removed from selection |
 
+## Bug Fix — Shift+Click Range Selection
+
+**File:** `frontend/src/components/browse/GalleryGrid.tsx`, `GalleryThumbnail` component
+
+**Root cause:** The `onClick` handler gates all calls to `onToggleSelect` behind `e.ctrlKey || e.metaKey`. A plain Shift+Click (without Ctrl/Meta) falls into the `else` branch and opens the image preview instead of triggering range selection. The range selection logic inside `toggleSelect` is correct and only needs to be reached.
+
+**Fix:** Add `|| e.shiftKey` to the condition:
+
+```typescript
+// Before
+if (e.ctrlKey || e.metaKey) {
+// After
+if (e.ctrlKey || e.metaKey || e.shiftKey) {
+```
+
+This routes Shift+Click to `onToggleSelect(item.index, true)`, which triggers the existing range selection from `lastSelectedRef.current` to the clicked item via `flatItems`.
+
+No changes to `toggleSelect` internals are needed.
+
 ## What Is Not Changing
 
 - The collapse/expand behavior of the category header is unchanged.
