@@ -61,7 +61,7 @@ All errors surface via `toast.error` using the message from the backend `HTTPExc
 | Condition | HTTP status | Toast message |
 |---|---|---|
 | Path already exists | 409 | "Path already exists" |
-| Parent directory missing | 400 | "Parent directory does not exist" |
+| Intermediate directories missing | — | Created automatically (`os.makedirs`) |
 | Permission denied | 403 | "Permission denied" |
 | No path typed | — | (guarded client-side, button disabled or no-op) |
 
