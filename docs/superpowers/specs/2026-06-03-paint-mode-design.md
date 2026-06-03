@@ -45,6 +45,49 @@ Controls rendered only when `paintMode` is active:
 - **Color swatches** — six fixed colors: white, red, teal, yellow, blue, black (eraser ignores color)
 - **Save** and **Cancel** buttons (right-aligned)
 
+## Zoom & Pan
+
+Always active on the Edit page image viewer, regardless of mode.
+
+### Zoom
+
+- **Trigger:** mousewheel (scroll up = zoom in, scroll down = zoom out)
+- **Center:** zoom is centered on the cursor position (not the image center)
+- **Range:** 0.25x – 8x, clamped
+- **Step:** multiply/divide by 1.15 per wheel tick
+- **Default:** 1.0 (fit-to-container as normal)
+
+**Zoom-to-cursor math:** When zoom changes from `oldZoom` to `newZoom`, adjust `panOffset` so the point under the cursor stays fixed:
+```
+panOffset.x = cursorX - (cursorX - panOffset.x) * (newZoom / oldZoom)
+panOffset.y = cursorY - (cursorY - panOffset.y) * (newZoom / oldZoom)
+```
+
+### Pan
+
+- **Trigger:** Shift + left mouse button drag
+- **Behavior:** drag freely in any direction; no boundary clamping
+- In Paint mode, Shift+drag pans instead of drawing — `mousedown` checks `event.shiftKey` and routes to pan or draw accordingly.
+
+### Implementation
+
+The image `<img>` and paint `<canvas>` overlay are wrapped in a container div. The transform is applied to this wrapper:
+
+```css
+transform: translate({panOffset.x}px, {panOffset.y}px) scale({zoom});
+transform-origin: 0 0;
+```
+
+Pan and zoom state lives in `ImageViewer` (not the page) as it is display-only and has no effect on the saved image. Reset to `zoom: 1, panOffset: {x:0, y:0}` when the viewed item changes.
+
+Mouse-to-canvas coordinate mapping in Paint mode must account for current zoom and pan:
+```
+canvasX = (eventX - panOffset.x) / zoom * (naturalWidth / containerWidth)
+canvasY = (eventY - panOffset.y) / zoom * (naturalHeight / containerHeight)
+```
+
+Zoom and pan are purely display transforms — no backend involvement.
+
 ## State (edit/page.tsx)
 
 ```typescript
@@ -73,7 +116,7 @@ paintColor: string                          // hex, default: "#ffffff"
 ### api.ts
 
 ```typescript
-paint: (index: number, blob: Blob, width: number, height: number) => Promise<void>
+paint: (index: number, blob: Blob) => Promise<void>
 ```
 
 Posts multipart form data: `index` and the paint PNG blob. The blob is already at full image resolution (canvas is sized to natural dimensions).
