@@ -1,0 +1,7 @@
+[submodule "backend"]
+	path = backend
+	url = git@github.com:larsupb/ImagerTagger2-backend.git
+
+[submodule "frontend"]
+	path = frontend
+	url = git@github.com:larsupb/ImagerTagge2-frontend.git

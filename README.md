@@ -53,6 +53,7 @@ ImageTagger2/
 - Python 3.12+
 - Node.js 18+
 - npm
+- [ComfyUI](https://github.com/comfyanonymous/ComfyUI) (optional — required for the upscale workflow feature; configure its URL in Settings)
 
 ### Backend
 
@@ -69,6 +70,19 @@ cd frontend
 npm install
 npm run dev
 ```
+
+### ComfyUI Upscaling (optional)
+
+The upscale workflow uses [ComfyUI-SeedVR2_VideoUpscaler](https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler). Install it via ComfyUI Manager or clone it into `ComfyUI/custom_nodes/`.
+
+Required models (place in `ComfyUI/models/`):
+
+| File | Purpose |
+|------|---------|
+| `seedvr2_ema_7b-Q4_K_M.gguf` | DiT upscaler model (Q4_K_M quantized) |
+| `ema_vae_fp16.safetensors` | VAE |
+
+Configure the ComfyUI server URL and optional API token in **Settings → ComfyUI**.
 
 Or use the convenience script:
 
