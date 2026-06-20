@@ -1,4 +1,4 @@
-# ImageTagger
+# ImageTagger 2
 
 AI-powered image tagging and dataset management tool. Rebuilt as a modern Next.js + FastAPI application.
 
