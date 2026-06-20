@@ -43,6 +43,7 @@ ImageTagger2/
 | Florence-2 | Detailed caption generation with configurable prompts |
 | Qwen2-VL | Alibaba's vision-language model |
 | VLM Tagger | API-based (Ollama, LM Studio, etc.) |
+| Ideogram | Structured JSON captioning via VLM API — outputs scene, style, color, and subject fields |
 | Combo | Combination of selected taggers |
 
 ## Quick Start
@@ -147,6 +148,16 @@ Settings are stored in `backend/settings.json`. Defaults:
   }
 }
 ```
+
+## Changelog
+
+### 2026-06-20
+
+- **Ideogram tagger** — New structured JSON captioning tagger that calls a VLM API (Ollama, LM Studio, etc.) and returns a rich schema: high-level description, style, color palette, subject, and mood fields. Output is serialized into a single caption string compatible with the rest of the pipeline.
+- **musubi_control / musubi_control_json export** — Two new export formats targeting the Musubi Tuner training framework. `musubi_control` exports image–caption pairs in the expected directory layout; `musubi_control_json` produces a JSON manifest with per-image metadata.
+- **Mask edit mode** — Paint directly on the generated mask in the Edit page to refine segmentation results before saving.
+- **Paint mode** — Free-hand paint overlay on images in the Edit page (pencil and eraser tools, configurable brush size and color).
+- **Category-aware Edit navigation** — Prev/next buttons, arrow keys, and the slider on the Edit page now navigate within the current image's category. The counter shows position within the category (e.g. "3 / 8"). Falls back to global navigation when gallery data is not cached.
 
 ## License
 
