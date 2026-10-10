@@ -40,13 +40,13 @@ New attributes in the future = dict entry only, never a DB change.
 
 ## Classification
 
-`POST /api/attributes/classify {tagger, only_missing?: bool}` → task-service job (progress, pause, cancel, SSE via existing jobs UI). Per image:
+`POST /api/attributes/classify?tagger=vlm-tagger&only_missing=false` → task-service job (progress, pause, cancel, SSE via existing jobs UI). Per image:
 
 1. One call to `lib.captioning.generate_caption(index, tagger, ...)` with a fixed prompt embedding the vocabularies (person-only lists omitted when the VLM itself reports no person in the same response) and demanding one flat JSON object: `{"shot_type": "...", ..., "has_person": true}`.
 2. Lenient parse: extract first `{...}` block, coerce/clamp each value into its vocabulary (case-insensitive, spaces→underscores), unknown or unparsable value → attribute left unset.
 3. Persist via `AttributeRepository` (mirrors `ImageRepository` style).
 
-`only_missing=true` leaves already-set attributes untouched so manual corrections survive reruns; default re-classify overwrites. A per-image parse failure writes nothing and is counted in the job result, never aborts the job.
+`only_missing=true` skips any image that already carries at least one attribute — no VLM call — so manual corrections and GPU budget survive reruns; default re-classify overwrites. A per-image VLM failure is counted in the job result, never aborts the job.
 
 ## API
 
@@ -54,8 +54,9 @@ All endpoints session-scoped (`X-Session-ID`), mounted under `/api/attributes` p
 
 - `GET /api/attributes/schema` — the vocabulary dict + applicability. Read first by UI and agents.
 - `GET /api/attributes/footprint` — dataset footprint: `{"shot_type": {"selfie": 10, "landscape": 37, "_unset": 12}, ..., "_total": 500}`. Only observed values are listed (a value absent from its attribute means count 0; the full vocabulary comes from the schema endpoint); `_unset` = images without a row for that attribute (person-only attributes count non-person images here).
-- `GET /api/attributes/query` — filtered listing: query params are attributes (`?shot_type=selfie&pose=walking`), values AND across attributes, `|` means OR within one attribute, literal `unset` matches missing rows. Params `limit` (default 100, max 500), `offset`. Response `{total, items: [{id, index, filename, width, height, is_bookmarked, category, attributes: {...}, captions: {<caption_type>: content}}]}` — `id` = DB row id, `index` = current dataset index (so existing `/api/media/file/{index}` works unchanged), `captions` = all caption types for the image.
-- `PUT /api/attributes {filename, attributes}` — manual set/unset; `null` value deletes a row; unknown attribute or out-of-vocabulary value → 422; person-only attributes accepted on any image (manual override beats heuristics).
+- `GET /api/attributes?filename=` — current attributes of one image, `{filename, attributes}` (`{}` when none); feeds the edit-view panel.
+- `GET /api/attributes/query` — filtered listing: query params are attributes (`?shot_type=selfie&pose=walking`), values AND across attributes, `|` means OR within one attribute, literal `unset` matches missing rows. Params `limit` (default 100, max 500), `offset`. Response `{total, items: [{id, index, filename, width, height, file_size, is_bookmarked, category, attributes: {...}, captions: {<caption_type>: content}}]}` — `id` = DB row id, `index` = current dataset index (so existing `/api/media/file/{index}` works unchanged; `null` when the file is not in the current dataset), `captions` = all caption types for the image.
+- `PUT /api/attributes {filename, attributes}` — manual set/unset; `null` value deletes a row; unknown attribute or out-of-vocabulary value → 422 (valid keys are persisted before the 422); person-only attributes accepted on any image (manual override beats heuristics); an unknown filename creates the DB row (files uploaded after project open have no row until the next sync).
 - `POST /api/attributes/classify` — starts the job, returns task id.
 - `GET /api/media/by-id/{id}` and `GET /api/media/thumbnail-by-id/{id}` — thin wrappers resolving DB id → filename → path, reusing the serving code of `media.py:24`; unknown id → 404.
 
@@ -65,7 +66,7 @@ Agent loop: `schema` → `footprint` → `query` per planned bucket (paginated v
 
 - `src/lib/api.ts` + `types.ts`: schema/footprint/query/classify/put calls and types (no `any`).
 - **Edit view**: attribute panel — one select per schema entry, humanized labels, "unset" option, only `applies_to: all` plus attributes set on the image, save on change via PUT.
-- **Browse**: attribute filter dropdowns (server-side — `attributes` param on the items endpoint filtering via the existing DB enrichment join) and compact value badges on cards.
+- **Browse**: attribute filter dropdowns (client-side over the loaded gallery — the browse view loads the whole dataset in one request, so a server param would fight pagination; the agent-side filter is `/api/attributes/query`) and compact value badges on cards.
 - **Jobs page**: classify job appears automatically (task-service).
 - Deferred as YAGNI: footprint visualization, server-side sampling.
 
