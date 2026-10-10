@@ -22,7 +22,7 @@ opt-in hook into the batch captioning run.
 
 | Question | Decision |
 |---|---|
-| What to embed | Captions only (no image/CLIP embeddings) |
+| What to embed | Combined text of all non-empty captions per image, one vector per image (no image/CLIP embeddings) |
 | Where to embed | Remote OpenAI-compatible `/v1/embeddings` endpoint |
 | Where exposed | Search box in browse grid + HTTP API |
 | When to index | On-demand index job + hook in batch captioning |
@@ -44,14 +44,16 @@ CREATE TABLE IF NOT EXISTS caption_vectors (
 );
 ```
 
-- One row per image: the embedding of its **active caption** (the
-  `captions` table row with `is_active = 1` — whatever type the user has
-  selected, typically the generated description).
+- One row per image: the embedding of the image's **combined caption text** —
+  every non-empty caption of that image, all types (tags, per-model
+  descriptions), concatenated sorted by `caption_type` with `\n\n` so the hash
+  is order-stable. Which caption is *active* is irrelevant to the index.
 - Staleness is derived, never tracked separately: an image needs (re-)indexing
-  when it has an active caption and **no row**, or `text_hash` differs from
-  `sha256(active caption)`, or `model` differs from the configured model.
-- Deleting an image removes its vector via FK cascade. Caption edits/regenerations
-  need no bookkeeping — the hash mismatch marks them at the next index run.
+  when it has non-empty captions and **no row**, or `text_hash` differs from
+  `sha256(combined caption text)`, or `model` differs from the configured model.
+- Deleting an image removes its vector via FK cascade. Editing/regenerating any
+  caption type needs no bookkeeping — the hash mismatch marks the image for
+  re-embedding at the next index run.
 
 ## Embedding endpoint configuration
 
@@ -77,10 +79,11 @@ every vector stale (re-embed all).
   Batch size 32 to keep payloads small and retries cheap.
 - `index_dataset(session, task_id)` — background job through `task_service`
   (progress/pause/cancel semantics identical to attribute classification):
-  select stale images (active caption read via `CaptionRepository.get_active`), embed in
+  select stale images (combined caption text built from all non-empty
+  `captions` rows, sorted by type), embed in
   batches of 32, normalize, store float32 BLOB + `text_hash` + `model` +
   `updated_at` (`INSERT OR REPLACE`), and delete orphaned rows (image without
-  a non-empty active caption). Task completes
+  a single non-empty caption). Task completes
   with an error count for images whose embedding failed, same convention as
   attributes.
 - `search(session, query, limit, min_score)` — embed the query once, cosine
@@ -109,8 +112,9 @@ New thin router `app/routers/search.py` (session-guarded like all others):
 `BatchProcessRequest.embed_captions: bool = False` (UI checkbox
 "Make captions searchable", default checked, placed with the existing
 "Detect image attributes" checkbox). When set, after each caption is generated
-in the batch loop, embed that single caption immediately and upsert the vector
-row. Embedding failure logs `embedding: error` for that image and continues —
+in the batch loop, re-embed that image's combined caption text (which includes
+the new caption) and upsert the vector row. Embedding failure logs
+`embedding: error` for that image and continues —
 never aborts the run (identical error policy to `classify_attributes`).
 
 ## Frontend
@@ -137,8 +141,8 @@ never aborts the run (identical error policy to `classify_attributes`).
 - Zero vectors + non-empty `q` → 400 (above). Zero vectors + index job →
   completes with 0 processed.
 - Caption deleted (or emptied): the stale vector keeps matching until the
-  next index run, which deletes rows whose image has no non-empty active
-  caption. No live bookkeeping.
+  next index run, which deletes rows whose image has no non-empty caption of
+  any type. No live bookkeeping.
 
 ## Testing
 
@@ -148,7 +152,9 @@ attribute tests monkeypatching `lib.captioning.generate_caption`):
 - `tests/test_embeddings.py` — `embed_texts` batching, retry-on-empty,
   normalization, error propagation.
 - `tests/test_search_api.py` — index job indexes new, re-indexes changed
-  captions and model-changed rows, skips fresh rows; `pending` counts;
+  captions and model-changed rows, skips fresh rows; combined text covers all
+  caption types (query matching only the tags caption finds the image whose
+  active caption is a description); `pending` counts;
   search returns nearest-first ranking with expected scores; `min_score`
   filtering; 400 on empty index; matrix cache invalidation after a re-index.
 - Batch hook — `embed_captions=true` upserts a vector after a generated
@@ -160,4 +166,6 @@ attribute tests monkeypatching `lib.captioning.generate_caption`):
 - Image/CLIP embeddings, hybrid (text+image) search.
 - Cross-dataset/project-wide search.
 - Similarity threshold tuning UI beyond a plain `min_score` API param.
-- Embedding caption history (only the active caption is ever embedded).
+- Searching within a single caption type (all non-empty captions are always
+  combined; per-type vectors are the documented upgrade path).
+- Embedding superseded caption versions (only current captions are embedded).
