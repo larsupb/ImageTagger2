@@ -26,10 +26,11 @@ ImageTagger2/
 
 ## Features
 
-- **Browse** — Paginated gallery view with thumbnails and bookmark indicators
+- **Browse** — Paginated gallery view with thumbnails, bookmark indicators, attribute filters, and semantic search over captions
 - **Edit** — Full image viewer with keyboard navigation, caption editor, AI tagger integration, upscaling, background removal, mask generation
 - **Captions** — Tag cloud with frequency/alphabetical sorting, bulk tag operations (remove, append, prepend, cleanup), search & replace with preview, JSONL export, move to subdirectory
-- **Batch** — Process entire datasets with rename, upscale, bucket resize, mask generation, and captioning. SSE-based progress streaming
+- **Batch** — Process entire datasets with rename, upscale, bucket resize, mask generation, captioning, attribute classification, and caption indexing. SSE-based progress streaming
+- **Semantic search** — Natural-language search across a dataset via caption embeddings (remote OpenAI-compatible `/v1/embeddings` endpoint, e.g. qwen3-embedding). Vectors are stored per dataset in its metadata database and refreshed incrementally; stale/missing captions show up as a pending count
 - **Tools** — Copy images (all or bookmarked) to target directory
 - **Validation** — Dataset validation with bucket distribution analysis
 - **Settings** — Configure upscaler, taggers, Florence prompt, rembg model, VLM Tagger API (Ollama, etc.), models directory
@@ -123,6 +124,8 @@ Open http://localhost:3000 (or your configured port).
 | POST | `/api/processing/mask/generate` | Generate mask |
 | POST | `/api/batch/process` | Batch process (SSE) |
 | POST | `/api/batch/analyze-buckets` | Analyze bucket distribution |
+| GET | `/api/search` | Semantic search (`?q=...`); without `q` returns index stats (indexed/pending) |
+| POST | `/api/search/index` | Index missing/stale caption embeddings (background job) |
 | GET | `/api/settings/` | Get settings |
 | PUT | `/api/settings/` | Update setting |
 | GET | `/api/settings/upscalers` | List available upscalers |
@@ -159,11 +162,24 @@ Settings are stored in `backend/settings.json`. Defaults:
     "base_url": "http://localhost:11434/v1",
     "model": "qwen3:32b",
     "prompt": "Describe the image in continuous text."
+  },
+  "embedding_endpoint": {
+    "base_url": "http://localhost:11434/v1",
+    "model": "qwen3-embedding-8b",
+    "api_key": "",
+    "timeout": 120
   }
 }
 ```
 
+`embedding_endpoint` (also editable in **Settings → Semantic search (embeddings)**) configures the OpenAI-compatible embeddings API used for semantic search.
+
 ## Changelog
+
+### 2026-10-11
+
+- **Image attributes** — Batch classification of images into structured attributes (orientation, composition, lighting, quality flags, etc.) via the VLM endpoint, with per-image review and attribute filters in the browse grid.
+- **Semantic search** — Caption embeddings per dataset (combined caption text, one vector per image) stored in the dataset's metadata database. Cosine search in the browse toolbar with score badges; stale and unindexed captions surfaced as a pending count with a one-click index job; new images embedded inline during batch captioning when "Make captions searchable" is enabled.
 
 ### 2026-06-20
 
