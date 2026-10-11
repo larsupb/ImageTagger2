@@ -79,6 +79,9 @@ Next.js rewrites `/api/:path*` → `http://localhost:8000/api/:path*` (next.conf
 ### Sessions
 All endpoints (except `/health`) require `X-Session-ID` header. Media endpoints also accept `session_id` query param.
 
+### API Reference
+Full machine-readable API schema (all paths, request/response models) is auto-generated at `http://localhost:8000/openapi.json` — read it instead of grepping routers.
+
 ### Batch Progress
 SSE streaming on `/api/batch/process` — use `EventSource` client-side.
 
